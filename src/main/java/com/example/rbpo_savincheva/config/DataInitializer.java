@@ -3,6 +3,7 @@ package com.example.rbpo_savincheva.config;
 import com.example.rbpo_savincheva.entity.AdmissionStatus;
 import com.example.rbpo_savincheva.entity.CampaignStatus;
 import com.example.rbpo_savincheva.entity.User;
+import com.example.rbpo_savincheva.entity.Role;
 import com.example.rbpo_savincheva.entity.VolunteerCampaign;
 import com.example.rbpo_savincheva.entity.VolunteerResponse;
 import com.example.rbpo_savincheva.entity.VolunteerTask;
@@ -15,38 +16,45 @@ import java.time.LocalDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-// Тестовые данные: добавляются один раз, если таблица users пустая
 @Component
 public class DataInitializer implements CommandLineRunner {
   private final UserRepository users;
   private final VolunteerCampaignRepository campaigns;
   private final VolunteerTaskRepository tasks;
   private final VolunteerResponseRepository responses;
+  private final PasswordEncoder passwordEncoder;
 
   public DataInitializer(
       UserRepository users,
       VolunteerCampaignRepository campaigns,
       VolunteerTaskRepository tasks,
-      VolunteerResponseRepository responses) {
+      VolunteerResponseRepository responses, PasswordEncoder passwordEncoder) {
     this.users = users;
     this.campaigns = campaigns;
     this.tasks = tasks;
     this.responses = responses;
+    this.passwordEncoder = passwordEncoder;
   }
 
   @Override
   @Transactional
   public void run(String... args) {
     if (users.count() > 0) {
+      users.findAll().forEach(this::initializeLegacyAccount);
+      if (users.findByEmailIgnoreCase("admin@example.com").isEmpty()) {
+        user("Администратор", "admin@example.com", Role.ADMIN, "AdminPass1!");
+      }
       return;
     }
 
-    User anna = user("Анна Координатор", "anna@example.com");
-    User ivan = user("Иван Петров", "ivan@example.com");
-    User petr = user("Пётр Сидоров", "petr@example.com");
-    user("Ольга Смирнова", "olga@example.com");
-    user("Сергей Волков", "sergey@example.com");
+    user("Администратор", "admin@example.com", Role.ADMIN, "AdminPass1!");
+    User anna = user("Анна Координатор", "anna@example.com", Role.COORDINATOR, "CoordinatorPass1!");
+    User ivan = user("Иван Петров", "ivan@example.com", Role.VOLUNTEER, "VolunteerPass1!");
+    User petr = user("Пётр Сидоров", "petr@example.com", Role.VOLUNTEER, "VolunteerPass1!");
+    user("Ольга Смирнова", "olga@example.com", Role.VOLUNTEER, "VolunteerPass1!");
+    user("Сергей Волков", "sergey@example.com", Role.VOLUNTEER, "VolunteerPass1!");
 
     VolunteerCampaign shelter =
         campaign("Помощь приюту для животных", LocalDate.of(2030, 5, 1), LocalDate.of(2030, 5, 31),
@@ -63,10 +71,25 @@ public class DataInitializer implements CommandLineRunner {
     response(cleaning, petr);
   }
 
-  private User user(String name, String email) {
+  private void initializeLegacyAccount(User user) {
+    if (user.getRole() == null) {
+      user.setRole("anna@example.com".equalsIgnoreCase(user.getEmail()) ? Role.COORDINATOR : Role.VOLUNTEER);
+    }
+    if (user.getPasswordHash() == null) {
+      user.setPasswordHash(passwordEncoder.encode(
+          user.getRole() == Role.COORDINATOR ? "CoordinatorPass1!" : "VolunteerPass1!"));
+    }
+    user.setEnabled(true);
+    users.save(user);
+  }
+
+  private User user(String name, String email, Role role, String password) {
     User user = new User();
     user.setName(name);
     user.setEmail(email);
+    user.setRole(role);
+    user.setPasswordHash(passwordEncoder.encode(password));
+    user.setEnabled(true);
     return users.save(user);
   }
 

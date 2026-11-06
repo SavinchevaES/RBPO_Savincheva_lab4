@@ -69,7 +69,6 @@ public class VolunteerResponseService {
     cleanup.deleteResponse(id);
   }
 
-  // ---------- Бизнес-операция 2: волонтёр откликается на задачу (задача + акция + пользователь) ----------
   public VolunteerResponse apply(long taskId, ApplyRequest r) {
     if (r == null || r.volunteerId() == null) {
       throw new IllegalArgumentException("volunteerId is required");
@@ -88,7 +87,6 @@ public class VolunteerResponseService {
     if (campaign.getStatus() != CampaignStatus.ACTIVE) {
       throw new ConflictException("Responses are accepted only for active campaigns");
     }
-    // текущее время берётся на сервере
     if (!task.getStartAt().isAfter(LocalDateTime.now())) {
       throw new ConflictException("The task has already started");
     }
@@ -106,11 +104,9 @@ public class VolunteerResponseService {
     return repository.saveAndFlush(response);
   }
 
-  // ---------- Бизнес-операция 3: допустить волонтёра (отклик + задача + акция) ----------
   public VolunteerResponse approve(long id) {
     VolunteerResponse response = find(id);
 
-    // блокируем задачу, чтобы два одобрения не заняли одно место
     VolunteerTask task =
         tasks
             .findByIdForUpdate(response.getTask().getId())

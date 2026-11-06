@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 public final class Requests {
   private Requests() {}
 
-  public record UserRequest(String name, String email) {}
+  public record UserRequest(String name, String email, String password) {}
+
+  public record RegistrationRequest(String name, String email, String password) {}
 
   public record CampaignRequest(
       String title, LocalDate startDate, LocalDate endDate, Long coordinatorId, String status) {}
@@ -21,7 +23,6 @@ public final class Requests {
 
   public record ReportRequest(Long responseId, Integer actualHours, String confirmationStatus) {}
 
-  // Бизнес-операции
   public record ApplyRequest(Long volunteerId) {}
 
   public record SubmitReportRequest(Integer actualHours) {}

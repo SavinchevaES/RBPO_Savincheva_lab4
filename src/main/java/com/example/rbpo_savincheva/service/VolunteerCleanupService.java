@@ -8,7 +8,6 @@ import com.example.rbpo_savincheva.repository.VolunteerTaskRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Каскадное удаление: сначала удаляются зависимые объекты, чтобы не остались битые ссылки
 @Service
 @Transactional
 public class VolunteerCleanupService {

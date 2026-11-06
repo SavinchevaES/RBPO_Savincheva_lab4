@@ -27,7 +27,6 @@ public class ApiExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
   }
 
-  // Нарушены ограничения БД (дубликат e-mail, повторный отклик и т.п.)
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Map<String, String>> integrity(DataIntegrityViolationException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)

@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/volunteer-campaigns")
+@PreAuthorize("isAuthenticated()")
 public class VolunteerCampaignController {
   private final VolunteerCampaignService service;
 
@@ -38,29 +40,32 @@ public class VolunteerCampaignController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCurrentUser(#request.coordinatorId()))")
   public ResponseEntity<CampaignDto> create(@RequestBody CampaignRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(CampaignDto.from(service.create(request)));
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCampaignCoordinator(#id))")
   public CampaignDto patch(@PathVariable long id, @RequestBody CampaignRequest request) {
     return CampaignDto.from(service.patch(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCampaignCoordinator(#id))")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
     service.delete(id);
   }
 
-  // Бизнес-операция 1: запустить акцию
   @PostMapping("/{id}/activate")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCampaignCoordinator(#id))")
   public CampaignDto activate(@PathVariable long id) {
     return CampaignDto.from(service.activate(id));
   }
 
-  // Бизнес-операция 5: завершить акцию, вернуть часы волонтёров
   @PostMapping("/{id}/complete")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCampaignCoordinator(#id))")
   public CompletionDto complete(@PathVariable long id) {
     VolunteerCampaignService.CompletionResult result = service.complete(id);
     List<VolunteerHoursDto> volunteers =

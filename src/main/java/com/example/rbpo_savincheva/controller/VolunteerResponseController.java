@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/volunteer-responses")
+@PreAuthorize("isAuthenticated()")
 public class VolunteerResponseController {
   private final VolunteerResponseService service;
   private final ParticipationReportService reportService;
@@ -41,29 +43,32 @@ public class VolunteerResponseController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<VolunteerResponseDto> create(@RequestBody ResponseRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(VolunteerResponseDto.from(service.create(request)));
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public VolunteerResponseDto patch(@PathVariable long id, @RequestBody ResponseRequest request) {
     return VolunteerResponseDto.from(service.patch(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
     service.delete(id);
   }
 
-  // Бизнес-операция 3: допустить волонтёра
   @PostMapping("/{id}/approve")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isResponseCoordinator(#id))")
   public VolunteerResponseDto approve(@PathVariable long id) {
     return VolunteerResponseDto.from(service.approve(id));
   }
 
-  // Бизнес-операция 4: подать отчёт об участии
   @PostMapping("/{id}/report")
+  @PreAuthorize("hasRole('VOLUNTEER') and @authorizationService.isResponseVolunteer(#id)")
   public ResponseEntity<ReportDto> report(
       @PathVariable long id, @RequestBody SubmitReportRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED)

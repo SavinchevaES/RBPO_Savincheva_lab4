@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/participation-reports")
+@PreAuthorize("isAuthenticated()")
 public class ParticipationReportController {
   private final ParticipationReportService service;
 
@@ -36,16 +38,19 @@ public class ParticipationReportController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ReportDto> create(@RequestBody ReportRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(ReportDto.from(service.create(request)));
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ReportDto patch(@PathVariable long id, @RequestBody ReportRequest request) {
     return ReportDto.from(service.patch(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
     service.delete(id);

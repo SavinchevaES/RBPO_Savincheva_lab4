@@ -15,7 +15,6 @@ public interface VolunteerTaskRepository extends JpaRepository<VolunteerTask, Lo
 
   boolean existsByCampaignId(Long campaignId);
 
-  // Блокирует строку задачи: два одновременных одобрения не займут одно место дважды
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select t from VolunteerTask t where t.id = :id")
   Optional<VolunteerTask> findByIdForUpdate(@Param("id") Long id);

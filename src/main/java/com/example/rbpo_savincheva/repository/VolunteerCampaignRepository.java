@@ -13,7 +13,6 @@ public interface VolunteerCampaignRepository extends JpaRepository<VolunteerCamp
 
   List<VolunteerCampaign> findByCoordinatorId(Long coordinatorId);
 
-  // Блокирует строку акции до конца транзакции
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select c from VolunteerCampaign c where c.id = :id")
   Optional<VolunteerCampaign> findByIdForUpdate(@Param("id") Long id);

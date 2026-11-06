@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/users")
+@PreAuthorize("isAuthenticated()")
 public class UserController {
   private final UserService service;
 
@@ -26,26 +28,31 @@ public class UserController {
   }
 
   @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public List<UserDto> all() {
     return service.findAll().stream().map(UserDto::from).toList();
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or @authorizationService.isCurrentUser(#id)")
   public UserDto one(@PathVariable long id) {
     return UserDto.from(service.find(id));
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserDto> create(@RequestBody UserRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(UserDto.from(service.create(request)));
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or @authorizationService.isCurrentUser(#id)")
   public UserDto patch(@PathVariable long id, @RequestBody UserRequest request) {
     return UserDto.from(service.patch(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
     service.delete(id);

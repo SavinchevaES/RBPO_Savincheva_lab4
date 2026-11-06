@@ -66,7 +66,6 @@ public class ParticipationReportService {
     cleanup.deleteReport(id);
   }
 
-  // ---------- Бизнес-операция 4: подать отчёт об участии (отклик + задача + акция) ----------
   public ParticipationReport submit(long responseId, SubmitReportRequest r) {
     if (r == null || r.actualHours() == null || r.actualHours() < 0) {
       throw new IllegalArgumentException("non-negative actualHours is required");

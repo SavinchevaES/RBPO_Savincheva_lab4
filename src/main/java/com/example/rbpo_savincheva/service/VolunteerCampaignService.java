@@ -46,7 +46,6 @@ public class VolunteerCampaignService {
     this.cleanup = cleanup;
   }
 
-  // Итог завершения акции: акция + подтверждённые часы по каждому волонтёру
   public record CompletionResult(VolunteerCampaign campaign, Map<User, Integer> confirmedHours) {}
 
   public List<VolunteerCampaign> findAll() {
@@ -85,7 +84,6 @@ public class VolunteerCampaignService {
     cleanup.deleteCampaign(id);
   }
 
-  // ---------- Бизнес-операция 1: запустить акцию (акция + задачи) ----------
   public VolunteerCampaign activate(long id) {
     VolunteerCampaign campaign = findForUpdate(id);
 
@@ -100,7 +98,6 @@ public class VolunteerCampaignService {
     return repository.saveAndFlush(campaign);
   }
 
-  // ---------- Бизнес-операция 5: завершить акцию (акция + отклики + отчёты) ----------
   public CompletionResult complete(long id) {
     VolunteerCampaign campaign = findForUpdate(id);
 
@@ -114,7 +111,6 @@ public class VolunteerCampaignService {
     Set<Long> reportedResponseIds =
         campaignReports.stream().map(rep -> rep.getResponse().getId()).collect(Collectors.toSet());
 
-    // у каждого допущенного волонтёра должен быть отчёт об участии
     for (VolunteerResponse response : campaignResponses) {
       if (response.getAdmissionStatus() == AdmissionStatus.APPROVED
           && !reportedResponseIds.contains(response.getId())) {
@@ -123,7 +119,6 @@ public class VolunteerCampaignService {
       }
     }
 
-    // необработанные отклики автоматически отклоняются
     for (VolunteerResponse response : campaignResponses) {
       if (response.getAdmissionStatus() == AdmissionStatus.PENDING) {
         response.setAdmissionStatus(AdmissionStatus.REJECTED);
@@ -131,7 +126,6 @@ public class VolunteerCampaignService {
     }
     responses.saveAll(campaignResponses);
 
-    // отчёты подтверждаются, считаем часы по волонтёрам
     Map<User, Integer> hours = new LinkedHashMap<>();
     for (ParticipationReport report : campaignReports) {
       if (report.getConfirmationStatus() == ConfirmationStatus.PENDING) {

@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Волонтёрская помощь (Задание 3)",
-    "description": "Запускать коллекцию целиком сверху вниз (Run collection). Данные создаются в начале и удаляются в конце.",
+    "name": "Волонтёрская помощь (Задание 4: Spring Security)",
+    "description": "Сначала запустите папку «0. Security — Задание 4». В ней есть регистрация, CSRF, Basic Auth, 401, 403 и защищённая бизнес-операция. Остальные папки сохранены как сценарии предыдущего задания.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,6 +11,62 @@
     }
   ],
   "item": [
+    {
+      "name": "0. Security — Задание 4",
+      "description": "Сценарии Spring Security. Запускайте эту папку отдельно: она демонстрирует CSRF, регистрацию, 401, 403 и контекстные права.",
+      "item": [
+        {
+          "name": "Получить CSRF-токен",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('csrfToken', pm.response.json().token);"]}}],
+          "request": {"method":"GET","url":"{{baseUrl}}/api/auth/csrf"}
+        },
+        {
+          "name": "Регистрация (роль VOLUNTEER назначается сервером)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('registeredVolunteerId', pm.response.json().id);", "pm.collectionVariables.set('registeredVolunteerEmail', pm.response.json().email);"]}}],
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\n  \"name\": \"Security volunteer\",\n  \"email\": \"security_{{$timestamp}}@example.com\",\n  \"password\": \"VolunteerPass1!\",\n  \"role\": \"ADMIN\"\n}"},"url":"{{baseUrl}}/api/auth/register"}
+        },
+        {
+          "name": "API без Basic Auth (401)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('401', () => pm.response.to.have.status(401));"]}}],
+          "request": {"method":"GET","url":"{{baseUrl}}/api/volunteer-campaigns"}
+        },
+        {
+          "name": "Админ: получить ID координатора",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));", "const coordinator = pm.response.json().find(u => u.email === 'anna@example.com');", "pm.expect(coordinator).to.exist; pm.collectionVariables.set('securityCoordinatorId', coordinator.id);"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"admin@example.com"},{"key":"password","value":"AdminPass1!"}]},"method":"GET","url":"{{baseUrl}}/api/users"}
+        },
+        {
+          "name": "Координатор: создать акцию (201)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('securityCampaignId', pm.response.json().id);"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"anna@example.com"},{"key":"password","value":"CoordinatorPass1!"}]},"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"title\":\"Security campaign\",\"startDate\":\"2030-10-01\",\"endDate\":\"2030-10-02\",\"coordinatorId\":{{securityCoordinatorId}},\"status\":\"PLANNED\"}"},"url":"{{baseUrl}}/api/volunteer-campaigns"}
+        },
+        {
+          "name": "Координатор: создать задачу и активировать",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('securityTaskId', pm.response.json().id);"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"anna@example.com"},{"key":"password","value":"CoordinatorPass1!"}]},"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"campaignId\":{{securityCampaignId}},\"requiredParticipants\":1,\"startAt\":\"2030-10-01T10:00:00\",\"durationHours\":2}"},"url":"{{baseUrl}}/api/volunteer-tasks"}
+        },
+        {
+          "name": "Координатор: активировать акцию (200)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"anna@example.com"},{"key":"password","value":"CoordinatorPass1!"}]},"method":"POST","header":[{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/api/volunteer-campaigns/{{securityCampaignId}}/activate"}
+        },
+        {
+          "name": "Волонтёр: откликнуться на задачу (201)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('securityResponseId', pm.response.json().id);"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"{{registeredVolunteerEmail}}"},{"key":"password","value":"VolunteerPass1!"}]},"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"volunteerId\":{{registeredVolunteerId}}}"},"url":"{{baseUrl}}/api/volunteer-tasks/{{securityTaskId}}/apply"}
+        },
+        {
+          "name": "Волонтёр не может создать акцию (403)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('403', () => pm.response.to.have.status(403));"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"{{registeredVolunteerEmail}}"},{"key":"password","value":"VolunteerPass1!"}]},"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-XSRF-TOKEN","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"title\":\"Несанкционированная акция\",\"startDate\":\"2030-10-01\",\"endDate\":\"2030-10-02\",\"coordinatorId\":{{registeredVolunteerId}},\"status\":\"PLANNED\"}"},"url":"{{baseUrl}}/api/volunteer-campaigns"}
+        },
+        {
+          "name": "CSRF отсутствует на изменяющем запросе (403)",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('403', () => pm.response.to.have.status(403));"]}}],
+          "request": {"auth":{"type":"basic","basic":[{"key":"username","value":"admin@example.com"},{"key":"password","value":"AdminPass1!"}]},"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"No CSRF\",\"email\":\"no_csrf_{{$timestamp}}@example.com\",\"password\":\"AdminPass1!\"}"},"url":"{{baseUrl}}/api/users"}
+        }
+      ]
+    },
     {
       "name": "1. Пользователи (CRUD)",
       "item": [

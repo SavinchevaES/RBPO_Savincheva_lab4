@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/volunteer-tasks")
+@PreAuthorize("isAuthenticated()")
 public class VolunteerTaskController {
   private final VolunteerTaskService service;
   private final VolunteerResponseService responseService;
@@ -41,23 +43,26 @@ public class VolunteerTaskController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isCampaignCoordinator(#request.campaignId()))")
   public ResponseEntity<TaskDto> create(@RequestBody TaskRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(TaskDto.from(service.create(request)));
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isTaskCoordinator(#id))")
   public TaskDto patch(@PathVariable long id, @RequestBody TaskRequest request) {
     return TaskDto.from(service.patch(id, request));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('COORDINATOR') and @authorizationService.isTaskCoordinator(#id))")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
     service.delete(id);
   }
 
-  // Бизнес-операция 2: волонтёр откликается на задачу
   @PostMapping("/{id}/apply")
+  @PreAuthorize("hasRole('VOLUNTEER') and @authorizationService.isCurrentUser(#request.volunteerId())")
   public ResponseEntity<VolunteerResponseDto> apply(
       @PathVariable long id, @RequestBody ApplyRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED)

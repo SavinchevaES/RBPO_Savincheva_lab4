@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Формат ответов API (такой же, как был в Задании 2)
 public final class Responses {
   private Responses() {}
 
@@ -98,7 +97,6 @@ public final class Responses {
     }
   }
 
-  // Итог завершения акции: часы волонтёров
   public record VolunteerHoursDto(Long volunteerId, String volunteerName, int confirmedHours) {}
 
   public record CompletionDto(CampaignDto campaign, List<VolunteerHoursDto> volunteers) {}
