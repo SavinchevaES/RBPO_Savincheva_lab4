@@ -10,6 +10,10 @@ public final class Requests {
 
   public record RegistrationRequest(String name, String email, String password) {}
 
+  public record LoginRequest(String email, String password) {}
+
+  public record RefreshRequest(String refreshToken) {}
+
   public record CampaignRequest(
       String title, LocalDate startDate, LocalDate endDate, Long coordinatorId, String status) {}
 

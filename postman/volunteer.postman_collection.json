@@ -12,6 +12,32 @@
   ],
   "item": [
     {
+      "name": "JWT — Задание 5",
+      "description": "Сценарий access/refresh. Для проверки БД: SELECT username, status, refresh_token_expiry FROM user_sessions ORDER BY refresh_token_expiry;",
+      "item": [
+        {
+          "name": "1. Логин: получить пару",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));", "const body = pm.response.json(); pm.expect(body.accessToken).to.be.a('string'); pm.expect(body.refreshToken).to.be.a('string'); pm.collectionVariables.set('jwtAccess', body.accessToken); pm.collectionVariables.set('jwtRefresh', body.refreshToken);"]}}],
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-Device-Id","value":"postman-lab5"}],"body":{"mode":"raw","raw":"{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPass1!\"\n}"},"url":"{{baseUrl}}/api/auth/login"}
+        },
+        {
+          "name": "2. Access к защищённому endpoint",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));"]}}],
+          "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{jwtAccess}}"}],"url":"{{baseUrl}}/api/volunteer-campaigns"}
+        },
+        {
+          "name": "3. Refresh: получить новую пару",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('200', () => pm.response.to.have.status(200));", "const body = pm.response.json(); pm.expect(body.accessToken).not.eql(pm.collectionVariables.get('jwtAccess')); pm.expect(body.refreshToken).not.eql(pm.collectionVariables.get('jwtRefresh')); pm.collectionVariables.set('oldJwtRefresh', pm.collectionVariables.get('jwtRefresh')); pm.collectionVariables.set('jwtAccess', body.accessToken); pm.collectionVariables.set('jwtRefresh', body.refreshToken);"]}}],
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"refreshToken\": \"{{jwtRefresh}}\"\n}"},"url":"{{baseUrl}}/api/auth/refresh"}
+        },
+        {
+          "name": "4. Старый refresh повторно: 401 и REVOKED",
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('401', () => pm.response.to.have.status(401));", "pm.expect(pm.response.json()).not.to.have.property('accessToken');"]}}],
+          "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"refreshToken\": \"{{oldJwtRefresh}}\"\n}"},"url":"{{baseUrl}}/api/auth/refresh"}
+        }
+      ]
+    },
+    {
       "name": "0. Security — Задание 4",
       "description": "Сценарии Spring Security. Запускайте эту папку отдельно: она демонстрирует CSRF, регистрацию, 401, 403 и контекстные права.",
       "item": [

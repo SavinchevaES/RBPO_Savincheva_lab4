@@ -4,3 +4,7 @@ ALTER TABLE volunteer_tasks ADD CONSTRAINT ck_tasks_participants CHECK (required
 ALTER TABLE volunteer_tasks ADD CONSTRAINT ck_tasks_duration CHECK (duration_hours >= 1);
 
 ALTER TABLE participation_reports ADD CONSTRAINT ck_reports_hours CHECK (actual_hours >= 0);
+
+ALTER TABLE user_sessions ADD CONSTRAINT ck_user_sessions_status
+    CHECK (status IN ('ACTIVE', 'USED', 'REVOKED'));
+ALTER TABLE user_sessions ADD CONSTRAINT uk_user_sessions_refresh_token UNIQUE (refresh_token);

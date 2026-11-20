@@ -19,7 +19,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -51,19 +52,25 @@ public class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
-    CookieCsrfTokenRepository csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
+  SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
+      JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
     http
-        .csrf(c -> c.csrfTokenRepository(csrf))
-        .httpBasic(b -> {})
+        .csrf(c -> c.disable())
+        .httpBasic(b -> b.disable())
+        .formLogin(f -> f.disable())
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .authorizeHttpRequests(a -> a
-            .requestMatchers("/api/auth/register", "/api/auth/csrf", "/hello", "/number").permitAll()
+            .requestMatchers(HttpMethod.POST,
+                "/api/auth/login", "/api/auth/register", "/api/auth/refresh",
+                "/auth/login", "/auth/register", "/auth/refresh").permitAll()
+            .requestMatchers("/hello", "/number").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers("/api/**").authenticated()
             .anyRequest().denyAll())
         .exceptionHandling(e -> e
             .authenticationEntryPoint((request, response, ex) -> {
-              response.setHeader("WWW-Authenticate", "Basic realm=\"Volunteer API\"");
+              response.setHeader("WWW-Authenticate", "Bearer");
               writeError(response, objectMapper, HttpServletResponse.SC_UNAUTHORIZED,
                   "Authentication is required");
             })

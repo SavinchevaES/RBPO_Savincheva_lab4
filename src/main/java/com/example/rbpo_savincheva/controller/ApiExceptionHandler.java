@@ -2,6 +2,7 @@ package com.example.rbpo_savincheva.controller;
 
 import com.example.rbpo_savincheva.service.ConflictException;
 import com.example.rbpo_savincheva.service.NotFoundException;
+import com.example.rbpo_savincheva.service.RefreshDeniedException;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,11 @@ public class ApiExceptionHandler {
   @ExceptionHandler(ConflictException.class)
   public ResponseEntity<Map<String, String>> conflict(ConflictException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+  }
+
+  @ExceptionHandler(RefreshDeniedException.class)
+  public ResponseEntity<Map<String, String>> unauthorized(RefreshDeniedException e) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

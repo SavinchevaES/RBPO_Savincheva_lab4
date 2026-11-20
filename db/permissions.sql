@@ -7,6 +7,9 @@ REASSIGN OWNED BY volunteer_app TO postgres;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO volunteer_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO volunteer_app;
 
+-- Явно указано для таблицы сессий (также покрывается ALL TABLES выше).
+GRANT SELECT, INSERT, UPDATE ON TABLE user_sessions TO volunteer_app;
+
 REVOKE CREATE ON SCHEMA public FROM volunteer_app;
 
 -- После этого в application.yml поменять ddl-auto: update на ddl-auto: validate

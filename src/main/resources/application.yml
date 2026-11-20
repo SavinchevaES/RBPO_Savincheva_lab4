@@ -12,3 +12,9 @@ spring:
       ddl-auto: update
     open-in-view: false
     show-sql: true
+security:
+  jwt:
+    # Set a long random value in .env for production; the defaults are suitable only for local work.
+    secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value-32-bytes}
+    access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:900}
+    refresh-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:1209600}

@@ -19,6 +19,8 @@ public final class Responses {
     }
   }
 
+  public record TokenPairDto(String accessToken, String refreshToken) { }
+
   public record CampaignDto(
       Long id,
       String title,
